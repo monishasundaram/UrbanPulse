@@ -1,0 +1,186 @@
+'use client';
+import { useState } from 'react';
+import Link from 'next/link';
+
+export default function Login() {
+  const [mode, setMode] = useState('login');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [citizenId, setCitizenId] = useState('');
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    password: '',
+    aadhaar: '',
+  });
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setSuccess(true);
+    setCitizenId('CIT' + Math.random().toString(36).substr(2, 6).toUpperCase());
+    }, 1500);
+  };
+
+  if (success) {
+    return (
+      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 text-center max-w-md w-full mx-4">
+          <div className="text-6xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold mb-2">
+            {mode === 'login' ? 'Welcome Back!' : 'Account Created!'}
+          </h2>
+          <p className="text-gray-400 mb-6">
+            {mode === 'login' ? 'You are now logged in.' : 'Your anonymous citizen account is ready.'}
+          </p>
+          <div className="bg-gray-800 rounded-xl p-4 mb-6">
+            <p className="text-gray-400 text-sm">Your Citizen ID</p>
+            <p className="text-xl font-bold text-blue-400">
+              {citizenId}
+            </p>
+            <p className="text-gray-500 text-xs mt-1">This is your public identity — your real info is encrypted</p>
+          </div>
+          <Link href="/" className="block w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition text-center">
+            Go to Homepage
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+      <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 max-w-md w-full mx-4">
+
+        {/* Logo */}
+        <div className="flex items-center gap-2 mb-8 justify-center">
+          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold">UP</div>
+          <span className="text-2xl font-bold">UrbanPulse</span>
+        </div>
+
+        {/* Toggle */}
+        <div className="flex bg-gray-800 rounded-lg p-1 mb-8">
+          <button
+            onClick={() => setMode('login')}
+            className={`flex-1 py-2 rounded-md text-sm font-medium transition ${mode === 'login' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            Login
+          </button>
+          <button
+            onClick={() => setMode('register')}
+            className={`flex-1 py-2 rounded-md text-sm font-medium transition ${mode === 'register' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            Register
+          </button>
+        </div>
+
+        <div className="space-y-4">
+
+          {/* Name - Register only */}
+          {mode === 'register' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder="Your full name"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+          )}
+
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
+            <input
+              type="tel"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="10 digit mobile number"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          {/* Aadhaar - Register only */}
+          {mode === 'register' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Aadhaar Number
+                <span className="text-gray-500 font-normal ml-2">(for verification only — never shown publicly)</span>
+              </label>
+              <input
+                type="text"
+                name="aadhaar"
+                value={form.aadhaar}
+                onChange={handleChange}
+                placeholder="12 digit Aadhaar number"
+                maxLength={12}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+          )}
+
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+            <input
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder="Enter password"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          {/* Privacy Notice */}
+          {mode === 'register' && (
+            <div className="bg-blue-950 border border-blue-800 rounded-lg p-4">
+              <p className="text-blue-300 text-xs">
+                🔐 <strong>Privacy Protected:</strong> Your Aadhaar and real name are encrypted and never shown publicly. You will be identified only by a random Citizen ID.
+              </p>
+            </div>
+          )}
+
+          {/* Submit */}
+          <button
+            onClick={handleSubmit}
+            disabled={loading || !form.phone || !form.password}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed py-3 rounded-lg font-semibold transition mt-2"
+          >
+            {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
+          </button>
+
+          {/* Links */}
+          <div className="text-center text-sm text-gray-500">
+            {mode === 'login' ? (
+              <p>Don&apos;t have an account?{' '}
+                <button onClick={() => setMode('register')} className="text-blue-400 hover:text-blue-300">Register here</button>
+              </p>
+            ) : (
+              <p>Already have an account?{' '}
+                <button onClick={() => setMode('login')} className="text-blue-400 hover:text-blue-300">Login here</button>
+              </p>
+            )}
+          </div>
+
+          {/* Back to home */}
+          <div className="text-center">
+            <Link href="/" className="text-gray-600 hover:text-gray-400 text-sm transition">
+              ← Back to Homepage
+            </Link>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  );
+}
