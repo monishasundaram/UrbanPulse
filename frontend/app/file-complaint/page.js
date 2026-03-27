@@ -35,27 +35,34 @@ export default function FileComplaint() {
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      const result = await submitComplaint({
-        title: form.title,
-        description: form.description,
-        category: form.category,
-        location: form.location,
-        pseudo_citizen_id: 'ANONYMOUS',
-      });
-      if (result.success) {
-        setComplaintId(result.complaint.complaint_number);
-        setStep(3);
-      } else {
-        alert('Error: ' + result.message);
-      }
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-    setLoading(false);
-  };
+  setLoading(true);
 
+  try {
+    const result = await submitComplaint({
+      title: form.title,
+      description: form.description,
+      category: form.category,
+      location: form.location,
+      pseudo_citizen_id: 'ANONYMOUS',
+      evidence: form.evidence
+    });
+
+    console.log("API Result:", result);
+
+    if (result && result.success === true) {
+      alert("Complaint filed successfully ✅");
+      setComplaintId(result.complaintNumber); // ✅ FIXED
+      setStep(3);
+    } else {
+      alert("Error: " + (result?.message || "Something went wrong"));
+    }
+
+  } catch (error) {
+    alert("Error: " + error.message);
+  }
+
+  setLoading(false);
+};
   return (
     <main className="min-h-screen bg-gray-950 text-white">
 
