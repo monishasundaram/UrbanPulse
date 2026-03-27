@@ -3,39 +3,6 @@ import { useEffect, useState } from 'react';
 import { getComplaints } from '../../lib/api';
 import Link from 'next/link';
 
-const sampleComplaints = [
-  {
-    id: 'GRV001',
-    title: 'Broken road near bus stand',
-    category: 'Road & Infrastructure',
-    location: 'Anna Nagar, Chennai',
-    status: 'Under Review',
-    date: '2026-03-25',
-    description: 'The road near the main bus stand has large potholes causing accidents daily.',
-    filedBy: 'Citizen #A7X92K',
-  },
-  {
-    id: 'GRV002',
-    title: 'No water supply for 3 days',
-    category: 'Water Supply',
-    location: 'Tiruppur, Tamil Nadu',
-    status: 'In Progress',
-    date: '2026-03-24',
-    description: 'Our area has not received water supply for the past 3 days with no explanation.',
-    filedBy: 'Citizen #B3K71M',
-  },
-  {
-    id: 'GRV003',
-    title: 'Street lights not working',
-    category: 'Electricity',
-    location: 'Coimbatore, Tamil Nadu',
-    status: 'Resolved',
-    date: '2026-03-20',
-    description: 'All street lights on main road have been non functional for 2 weeks.',
-    filedBy: 'Citizen #C9P44R',
-  },
-];
-
 const statusColors = {
   'Filed': 'bg-gray-700 text-gray-300',
   'Under Review': 'bg-yellow-900 text-yellow-300',
@@ -46,21 +13,24 @@ const statusColors = {
 export default function Complaints() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
-  const [complaints, setComplaints] = useState(sampleComplaints);
-
-useEffect(() => {
-  getComplaints().then(data => {
-    if (data.success && data.complaints.length > 0) {
-      setComplaints(data.complaints);
-    }
-  });
-}, []);
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const statuses = ['All', 'Filed', 'Under Review', 'In Progress', 'Resolved'];
 
-  const filtered = sampleComplaints.filter(c => {
-    const matchSearch = c.title.toLowerCase().includes(search.toLowerCase()) ||
-      c.location.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    getComplaints().then(data => {
+      if (data.success) {
+        setComplaints(data.complaints);
+      }
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const filtered = complaints.filter(c => {
+    const matchSearch =
+      (c.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.location || '').toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === 'All' || c.status === filter;
     return matchSearch && matchFilter;
   });
@@ -110,10 +80,10 @@ useEffect(() => {
         {/* Stats Bar */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total', value: sampleComplaints.length, color: 'text-white' },
-            { label: 'Under Review', value: sampleComplaints.filter(c => c.status === 'Under Review').length, color: 'text-yellow-400' },
-            { label: 'In Progress', value: sampleComplaints.filter(c => c.status === 'In Progress').length, color: 'text-blue-400' },
-            { label: 'Resolved', value: sampleComplaints.filter(c => c.status === 'Resolved').length, color: 'text-green-400' },
+            { label: 'Total', value: complaints.length, color: 'text-white' },
+            { label: 'Under Review', value: complaints.filter(c => c.status === 'Under Review').length, color: 'text-yellow-400' },
+            { label: 'In Progress', value: complaints.filter(c => c.status === 'In Progress').length, color: 'text-blue-400' },
+            { label: 'Resolved', value: complaints.filter(c => c.status === 'Resolved').length, color: 'text-green-400' },
           ].map(stat => (
             <div key={stat.label} className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800">
               <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
@@ -124,7 +94,11 @@ useEffect(() => {
 
         {/* Complaints List */}
         <div className="space-y-4">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12 text-gray-500">
+              Loading complaints...
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               No complaints found
             </div>
@@ -133,19 +107,19 @@ useEffect(() => {
               <div key={complaint.id} className="bg-gray-900 rounded-xl p-6 border border-gray-800 hover:border-gray-600 transition">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <span className="text-blue-400 text-sm font-mono">{complaint.id}</span>
+                    <span className="text-blue-400 text-sm font-mono">{complaint.complaint_number || complaint.id}</span>
                     <h3 className="text-lg font-semibold mt-1">{complaint.title}</h3>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${statusColors[complaint.status]}`}>
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${statusColors[complaint.status] || 'bg-gray-700 text-gray-300'}`}>
                     {complaint.status}
                   </span>
                 </div>
                 <p className="text-gray-400 text-sm mb-4">{complaint.description}</p>
-                <div className="flex gap-6 text-xs text-gray-500">
+                <div className="flex gap-6 text-xs text-gray-500 flex-wrap">
                   <span>📍 {complaint.location}</span>
                   <span>🏷️ {complaint.category}</span>
-                  <span>📅 {complaint.date}</span>
-                  <span>👤 {complaint.filedBy}</span>
+                  <span>📅 {new Date(complaint.created_at).toLocaleDateString()}</span>
+                  <span>👤 {complaint.pseudo_citizen_id}</span>
                 </div>
               </div>
             ))

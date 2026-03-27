@@ -1,44 +1,61 @@
 const API_URL = 'http://localhost:5000';
 
 export async function submitComplaint(data) {
-  const res = await fetch(`http://localhost:5000/api/complaints/submit`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  const json = await res.json();
-  console.log('API response:', json);
-  return json;
+  try {
+    const res = await fetch(`${API_URL}/api/complaints/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    console.log('API response:', json);
+    return json;
+  } catch (error) {
+    console.error('Submit error:', error);
+    return { success: false, message: error.message };
+  }
 }
 
-// Get all complaints
 export async function getComplaints() {
-  const res = await fetch(`${API_URL}/api/complaints/all`);
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/api/complaints/all`);
+    return res.json();
+  } catch (error) {
+    return { success: false, complaints: [] };
+  }
 }
 
-// Get single complaint
 export async function getComplaint(id) {
-  const res = await fetch(`${API_URL}/api/complaints/${id}`);
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/api/complaints/${id}`);
+    return res.json();
+  } catch (error) {
+    return { success: false };
+  }
 }
 
-// Register citizen
 export async function registerCitizen(data) {
-  const res = await fetch(`${API_URL}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
 }
 
-// Login citizen
 export async function loginCitizen(data) {
-  const res = await fetch(`${API_URL}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
 }
