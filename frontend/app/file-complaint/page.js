@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { submitComplaint } from '../../lib/api';
 
 export default function FileComplaint() {
   const [step, setStep] = useState(1);
@@ -35,12 +36,24 @@ export default function FileComplaint() {
 
   const handleSubmit = async () => {
     setLoading(true);
-    // We will connect to backend later
-    setTimeout(() => {
+    try {
+      const result = await submitComplaint({
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        location: form.location,
+        pseudo_citizen_id: 'ANONYMOUS',
+      });
+      if (result.success) {
+        setComplaintId(result.complaint.complaint_number);
+        setStep(3);
+      } else {
+        alert('Error: ' + result.message);
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
     setLoading(false);
-    setComplaintId('GRV' + Date.now().toString().slice(-6));
-    setStep(3);
-    }, 2000);
   };
 
   return (
@@ -123,7 +136,7 @@ export default function FileComplaint() {
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Description
-                  <span className="text-gray-500 font-normal ml-2">(minimum 50 words)</span>
+                  <span className="text-gray-500 font-normal ml-2">(minimum 10 words)</span>
                 </label>
                 <textarea
                   name="description"
@@ -158,8 +171,6 @@ export default function FileComplaint() {
             </p>
 
             <div className="space-y-6">
-
-              {/* Upload Box */}
               <div className="border-2 border-dashed border-gray-700 rounded-xl p-10 text-center hover:border-blue-500 transition cursor-pointer"
                 onClick={() => document.getElementById('fileInput').click()}>
                 {form.evidence ? (
@@ -184,10 +195,9 @@ export default function FileComplaint() {
                 />
               </div>
 
-              {/* AI Check Notice */}
               <div className="bg-blue-950 border border-blue-800 rounded-lg p-4">
                 <p className="text-blue-300 text-sm">
-                  🤖 <strong>AI Proof Gate:</strong> Your evidence will be scanned for authenticity. 
+                  🤖 <strong>AI Proof Gate:</strong> Your evidence will be scanned for authenticity.
                   AI-generated or manipulated images will be rejected automatically.
                 </p>
               </div>
@@ -220,17 +230,13 @@ export default function FileComplaint() {
 
             <div className="bg-gray-800 rounded-xl p-6 mb-8">
               <p className="text-gray-400 text-sm mb-1">Your Complaint ID</p>
-              <p className="text-2xl font-bold text-blue-400">
-                {complaintId}
-              </p>
-              <p className="text-gray-500 text-xs mt-2">
-                Save this ID to track your complaint
-              </p>
+              <p className="text-2xl font-bold text-blue-400">{complaintId}</p>
+              <p className="text-gray-500 text-xs mt-2">Save this ID to track your complaint</p>
             </div>
 
             <div className="bg-green-950 border border-green-800 rounded-lg p-4 mb-8 text-left">
               <p className="text-green-300 text-sm">
-                ✅ Complaint hashed on blockchain<br />
+                ✅ Complaint saved to database<br />
                 ✅ Evidence stored securely<br />
                 ✅ Routed to correct department<br />
                 ✅ Your identity is protected

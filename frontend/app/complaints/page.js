@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getComplaints } from '../../lib/api';
 import Link from 'next/link';
 
 const sampleComplaints = [
@@ -45,6 +46,15 @@ const statusColors = {
 export default function Complaints() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
+  const [complaints, setComplaints] = useState(sampleComplaints);
+
+useEffect(() => {
+  getComplaints().then(data => {
+    if (data.success && data.complaints.length > 0) {
+      setComplaints(data.complaints);
+    }
+  });
+}, []);
 
   const statuses = ['All', 'Filed', 'Under Review', 'In Progress', 'Resolved'];
 
