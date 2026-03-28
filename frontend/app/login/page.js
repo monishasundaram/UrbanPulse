@@ -1,12 +1,14 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { registerCitizen, loginCitizen } from '../../lib/api';
 
 export default function Login() {
   const [mode, setMode] = useState('login');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [citizenId, setCitizenId] = useState('');
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -16,15 +18,43 @@ export default function Login() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setError('');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-    setCitizenId('CIT' + Math.random().toString(36).substr(2, 6).toUpperCase());
-    }, 1500);
+    setError('');
+    try {
+      let result;
+      if (mode === 'register') {
+        result = await registerCitizen({
+          name: form.name,
+          phone: form.phone,
+          password: form.password,
+          aadhaar: form.aadhaar,
+        });
+      } else {
+        result = await loginCitizen({
+          phone: form.phone,
+          password: form.password,
+        });
+      }
+
+      if (result.success) {
+        // Save token and pseudoId to localStorage
+        if (result.token) {
+          localStorage.setItem('token', result.token);
+          localStorage.setItem('pseudoId', result.pseudoId);
+        }
+        setCitizenId(result.pseudoId);
+        setSuccess(true);
+      } else {
+        setError(result.message || 'Something went wrong');
+      }
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+    }
+    setLoading(false);
   };
 
   if (success) {
@@ -40,14 +70,19 @@ export default function Login() {
           </p>
           <div className="bg-gray-800 rounded-xl p-4 mb-6">
             <p className="text-gray-400 text-sm">Your Citizen ID</p>
-            <p className="text-xl font-bold text-blue-400">
-              {citizenId}
+            <p className="text-xl font-bold text-blue-400">{citizenId}</p>
+            <p className="text-gray-500 text-xs mt-1">
+              This is your public identity — your real info is encrypted
             </p>
-            <p className="text-gray-500 text-xs mt-1">This is your public identity — your real info is encrypted</p>
           </div>
-          <Link href="/" className="block w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition text-center">
-            Go to Homepage
-          </Link>
+          <div className="flex gap-3">
+            <Link href="/" className="flex-1 border border-gray-600 hover:border-gray-400 py-3 rounded-lg font-semibold transition text-center">
+              Home
+            </Link>
+            <Link href="/file-complaint" className="flex-1 bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition text-center">
+              File Complaint
+            </Link>
+          </div>
         </div>
       </main>
     );
@@ -66,13 +101,13 @@ export default function Login() {
         {/* Toggle */}
         <div className="flex bg-gray-800 rounded-lg p-1 mb-8">
           <button
-            onClick={() => setMode('login')}
+            onClick={() => { setMode('login'); setError(''); }}
             className={`flex-1 py-2 rounded-md text-sm font-medium transition ${mode === 'login' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
           >
             Login
           </button>
           <button
-            onClick={() => setMode('register')}
+            onClick={() => { setMode('register'); setError(''); }}
             className={`flex-1 py-2 rounded-md text-sm font-medium transition ${mode === 'register' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
           >
             Register
@@ -81,7 +116,6 @@ export default function Login() {
 
         <div className="space-y-4">
 
-          {/* Name - Register only */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
@@ -96,7 +130,6 @@ export default function Login() {
             </div>
           )}
 
-          {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
             <input
@@ -109,12 +142,11 @@ export default function Login() {
             />
           </div>
 
-          {/* Aadhaar - Register only */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Aadhaar Number
-                <span className="text-gray-500 font-normal ml-2">(for verification only — never shown publicly)</span>
+                <span className="text-gray-500 font-normal ml-2">(never shown publicly)</span>
               </label>
               <input
                 type="text"
@@ -128,7 +160,6 @@ export default function Login() {
             </div>
           )}
 
-          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
             <input
@@ -141,7 +172,13 @@ export default function Login() {
             />
           </div>
 
-          {/* Privacy Notice */}
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-950 border border-red-800 rounded-lg p-3">
+              <p className="text-red-300 text-sm">❌ {error}</p>
+            </div>
+          )}
+
           {mode === 'register' && (
             <div className="bg-blue-950 border border-blue-800 rounded-lg p-4">
               <p className="text-blue-300 text-xs">
@@ -150,7 +187,6 @@ export default function Login() {
             </div>
           )}
 
-          {/* Submit */}
           <button
             onClick={handleSubmit}
             disabled={loading || !form.phone || !form.password}
@@ -159,7 +195,6 @@ export default function Login() {
             {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
           </button>
 
-          {/* Links */}
           <div className="text-center text-sm text-gray-500">
             {mode === 'login' ? (
               <p>Don&apos;t have an account?{' '}
@@ -172,7 +207,6 @@ export default function Login() {
             )}
           </div>
 
-          {/* Back to home */}
           <div className="text-center">
             <Link href="/" className="text-gray-600 hover:text-gray-400 text-sm transition">
               ← Back to Homepage

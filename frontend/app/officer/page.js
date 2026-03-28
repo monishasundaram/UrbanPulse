@@ -1,82 +1,77 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-const complaints = [
-  {
-    id: 'GRV001',
-    title: 'Broken road near bus stand',
-    category: 'Road & Infrastructure',
-    location: 'Anna Nagar, Chennai',
-    status: 'Under Review',
-    date: '2026-03-25',
-    description: 'The road near the main bus stand has large potholes causing accidents daily.',
-    filedBy: 'Citizen #A7X92K',
-    priority: 'High',
-  },
-  {
-    id: 'GRV002',
-    title: 'No water supply for 3 days',
-    category: 'Water Supply',
-    location: 'Tiruppur, Tamil Nadu',
-    status: 'In Progress',
-    date: '2026-03-24',
-    description: 'Our area has not received water supply for the past 3 days.',
-    filedBy: 'Citizen #B3K71M',
-    priority: 'High',
-  },
-  {
-    id: 'GRV003',
-    title: 'Street lights not working',
-    category: 'Electricity',
-    location: 'Coimbatore, Tamil Nadu',
-    status: 'Resolved',
-    date: '2026-03-20',
-    description: 'All street lights on main road have been non functional for 2 weeks.',
-    filedBy: 'Citizen #C9P44R',
-    priority: 'Medium',
-  },
-];
+import { getComplaints, logAction, getActions } from '../../lib/api';
 
 const statusColors = {
+  'Filed': 'bg-gray-700 text-gray-300',
   'Under Review': 'bg-yellow-900 text-yellow-300',
   'In Progress': 'bg-blue-900 text-blue-300',
   'Resolved': 'bg-green-900 text-green-300',
 };
 
-const priorityColors = {
-  'High': 'text-red-400',
-  'Medium': 'text-yellow-400',
-  'Low': 'text-green-400',
-};
-
 export default function OfficerDashboard() {
+  const [complaints, setComplaints] = useState([]);
   const [selected, setSelected] = useState(null);
   const [action, setAction] = useState('');
   const [actionList, setActionList] = useState([]);
-  const [statusList, setStatusList] = useState(
-    complaints.reduce((acc, c) => ({ ...acc, [c.id]: c.status }), {})
-  );
+  const [status, setStatus] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [actionPhoto, setActionPhoto] = useState(null);
+  const [actionPhotoPreview, setActionPhotoPreview] = useState(null);
 
-  const handleLogAction = () => {
-    if (!action.trim()) return;
-    const newAction = {
-      id: 'ACT' + Date.now(),
-      complaintId: selected.id,
-      text: action,
-      time: new Date().toLocaleTimeString(),
-      date: new Date().toLocaleDateString(),
-      signature: Buffer.from(selected.id + Date.now()).toString('base64').slice(0, 20),
-    };
-    setActionList([newAction, ...actionList]);
+  useEffect(() => {
+    getComplaints().then(data => {
+      if (data.success) setComplaints(data.complaints);
+    });
+  }, []);
+
+  const handleSelectComplaint = async (complaint) => {
+    setSelected(complaint);
+    setStatus(complaint.status);
     setAction('');
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 2000);
+    setSubmitted(false);
+    setActionPhoto(null);
+    setActionPhotoPreview(null);
+    const data = await getActions(complaint.id);
+    if (data.success) setActionList(data.actions);
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setStatusList({ ...statusList, [id]: newStatus });
+  const handleLogAction = async () => {
+    if (!action.trim()) return;
+    setLoading(true);
+    const result = await logAction({
+      complaint_id: selected.id,
+      officer_id: 'OFF2026',
+      action_type: 'Update',
+      description: action,
+      status: status,
+    }, actionPhoto);
+    if (result.success) {
+      setActionList([result.action, ...actionList]);
+      setAction('');
+      setActionPhoto(null);
+      setActionPhotoPreview(null);
+      setSubmitted(true);
+      setComplaints(complaints.map(c =>
+        c.id === selected.id ? { ...c, status: status } : c
+      ));
+      setTimeout(() => setSubmitted(false), 3000);
+    }
+    setLoading(false);
+  };
+
+  const getPhotoFromDescription = (description) => {
+    if (!description) return null;
+    const parts = description.split('||PHOTO:');
+    return parts.length > 1 ? parts[1] : null;
+  };
+
+  const getCleanDescription = (description) => {
+    if (!description) return '';
+    return description.split('||PHOTO:')[0];
   };
 
   return (
@@ -92,36 +87,36 @@ export default function OfficerDashboard() {
           <div className="bg-green-900 text-green-300 text-xs px-3 py-1 rounded-full">
             ● Officer Online
           </div>
-          <div className="text-gray-400 text-sm">Officer #OFF2024</div>
+          <div className="text-gray-400 text-sm">Officer #OFF2026</div>
         </div>
       </nav>
 
-      <div className="flex h-screen">
+      <div className="flex" style={{ height: 'calc(100vh - 65px)' }}>
 
-        {/* Left Panel - Complaints List */}
+        {/* Left Panel */}
         <div className="w-96 bg-gray-900 border-r border-gray-800 overflow-y-auto">
           <div className="p-4 border-b border-gray-800">
-            <h2 className="font-bold text-lg">Assigned Complaints</h2>
-            <p className="text-gray-500 text-xs mt-1">{complaints.length} total assigned</p>
+            <h2 className="font-bold text-lg">Complaints</h2>
+            <p className="text-gray-500 text-xs mt-1">{complaints.length} total</p>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2 p-4 border-b border-gray-800">
             <div className="bg-gray-800 rounded-lg p-2 text-center">
               <div className="text-lg font-bold text-yellow-400">
-                {Object.values(statusList).filter(s => s === 'Under Review').length}
+                {complaints.filter(c => c.status === 'Under Review').length}
               </div>
               <div className="text-xs text-gray-500">Review</div>
             </div>
             <div className="bg-gray-800 rounded-lg p-2 text-center">
               <div className="text-lg font-bold text-blue-400">
-                {Object.values(statusList).filter(s => s === 'In Progress').length}
+                {complaints.filter(c => c.status === 'In Progress').length}
               </div>
               <div className="text-xs text-gray-500">Progress</div>
             </div>
             <div className="bg-gray-800 rounded-lg p-2 text-center">
               <div className="text-lg font-bold text-green-400">
-                {Object.values(statusList).filter(s => s === 'Resolved').length}
+                {complaints.filter(c => c.status === 'Resolved').length}
               </div>
               <div className="text-xs text-gray-500">Resolved</div>
             </div>
@@ -129,33 +124,34 @@ export default function OfficerDashboard() {
 
           {/* Complaint Cards */}
           <div className="p-3 space-y-3">
-            {complaints.map(complaint => (
-              <div
-                key={complaint.id}
-                onClick={() => setSelected(complaint)}
-                className={`rounded-xl p-4 cursor-pointer border transition ${
-                  selected?.id === complaint.id
-                    ? 'border-blue-500 bg-gray-800'
-                    : 'border-gray-800 hover:border-gray-600 bg-gray-800'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-blue-400 text-xs font-mono">{complaint.id}</span>
-                  <span className={`text-xs font-bold ${priorityColors[complaint.priority]}`}>
-                    {complaint.priority}
+            {complaints.length === 0 ? (
+              <p className="text-gray-600 text-sm text-center py-8">No complaints yet</p>
+            ) : (
+              complaints.map(complaint => (
+                <div
+                  key={complaint.id}
+                  onClick={() => handleSelectComplaint(complaint)}
+                  className={`rounded-xl p-4 cursor-pointer border transition ${
+                    selected?.id === complaint.id
+                      ? 'border-blue-500 bg-gray-800'
+                      : 'border-gray-800 hover:border-gray-600 bg-gray-800'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-blue-400 text-xs font-mono">{complaint.complaint_number}</span>
+                  </div>
+                  <h3 className="text-sm font-semibold mb-1">{complaint.title}</h3>
+                  <p className="text-gray-500 text-xs mb-2">📍 {complaint.location}</p>
+                  <span className={`text-xs px-2 py-1 rounded-full ${statusColors[complaint.status] || 'bg-gray-700 text-gray-300'}`}>
+                    {complaint.status}
                   </span>
                 </div>
-                <h3 className="text-sm font-semibold mb-1">{complaint.title}</h3>
-                <p className="text-gray-500 text-xs mb-2">📍 {complaint.location}</p>
-                <span className={`text-xs px-2 py-1 rounded-full ${statusColors[statusList[complaint.id]]}`}>
-                  {statusList[complaint.id]}
-                </span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
-        {/* Right Panel - Complaint Detail */}
+        {/* Right Panel */}
         <div className="flex-1 overflow-y-auto p-6">
           {!selected ? (
             <div className="h-full flex items-center justify-center text-gray-600">
@@ -171,11 +167,11 @@ export default function OfficerDashboard() {
               <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <span className="text-blue-400 text-sm font-mono">{selected.id}</span>
+                    <span className="text-blue-400 text-sm font-mono">{selected.complaint_number}</span>
                     <h2 className="text-2xl font-bold mt-1">{selected.title}</h2>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full ${statusColors[statusList[selected.id]]}`}>
-                    {statusList[selected.id]}
+                  <span className={`text-xs px-3 py-1 rounded-full ${statusColors[selected.status] || 'bg-gray-700 text-gray-300'}`}>
+                    {selected.status}
                   </span>
                 </div>
                 <p className="text-gray-400 mb-4">{selected.description}</p>
@@ -190,11 +186,11 @@ export default function OfficerDashboard() {
                   </div>
                   <div>
                     <span className="text-gray-500">Filed By</span>
-                    <p className="text-white">👤 {selected.filedBy}</p>
+                    <p className="text-white">👤 {selected.pseudo_citizen_id}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Date</span>
-                    <p className="text-white">📅 {selected.date}</p>
+                    <p className="text-white">📅 {new Date(selected.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
               </div>
@@ -203,12 +199,12 @@ export default function OfficerDashboard() {
               <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
                 <h3 className="font-bold mb-4">Update Status</h3>
                 <div className="flex gap-3 flex-wrap">
-                  {['Under Review', 'In Progress', 'Resolved'].map(s => (
+                  {['Filed', 'Under Review', 'In Progress', 'Resolved'].map(s => (
                     <button
                       key={s}
-                      onClick={() => handleStatusChange(selected.id, s)}
+                      onClick={() => setStatus(s)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition border ${
-                        statusList[selected.id] === s
+                        status === s
                           ? 'border-blue-500 bg-blue-600 text-white'
                           : 'border-gray-700 text-gray-400 hover:border-gray-500'
                       }`}
@@ -221,9 +217,9 @@ export default function OfficerDashboard() {
 
               {/* Log Action */}
               <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
-                <h3 className="font-bold mb-4">Log Action</h3>
+                <h3 className="font-bold mb-2">Log Action</h3>
                 <p className="text-gray-500 text-xs mb-4">
-                  Every action is digitally signed and recorded on blockchain permanently.
+                  Every action is digitally signed and saved to database permanently.
                 </p>
                 <textarea
                   value={action}
@@ -232,34 +228,109 @@ export default function OfficerDashboard() {
                   placeholder="Describe the action taken..."
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none mb-4"
                 />
+
+                {/* Photo Upload */}
+                <div
+                  className="border-2 border-dashed border-gray-700 rounded-xl p-4 text-center hover:border-blue-500 transition cursor-pointer mb-4"
+                  onClick={() => document.getElementById('actionPhoto').click()}
+                >
+                  {actionPhotoPreview ? (
+                    <div>
+                      <img
+                        src={actionPhotoPreview}
+                        alt="Action proof"
+                        className="max-h-40 mx-auto rounded-lg mb-2 object-cover"
+                      />
+                      <p className="text-green-400 text-xs">✅ Photo attached — click to change</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-3xl mb-2">📷</div>
+                      <p className="text-gray-400 text-sm">Click to attach proof photo</p>
+                      <p className="text-gray-600 text-xs mt-1">Optional but recommended</p>
+                    </div>
+                  )}
+                  <input
+                    id="actionPhoto"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setActionPhoto(file);
+                        setActionPhotoPreview(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </div>
+
                 <button
                   onClick={handleLogAction}
-                  disabled={!action.trim()}
+                  disabled={!action.trim() || loading}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed py-3 rounded-lg font-semibold transition"
                 >
-                  {submitted ? '✅ Action Logged on Blockchain!' : 'Log Action'}
+                  {submitted ? '✅ Action Saved!' : loading ? 'Saving...' : 'Log Action'}
                 </button>
               </div>
 
               {/* Action History */}
-              {actionList.filter(a => a.complaintId === selected.id).length > 0 && (
-                <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-                  <h3 className="font-bold mb-4">Action History</h3>
-                  <div className="space-y-4">
-                    {actionList
-                      .filter(a => a.complaintId === selected.id)
-                      .map(a => (
-                        <div key={a.id} className="border-l-2 border-blue-500 pl-4">
-                          <p className="text-white text-sm">{a.text}</p>
-                          <div className="flex gap-4 mt-2">
-                            <span className="text-gray-500 text-xs">📅 {a.date} {a.time}</span>
-                            <span className="text-gray-600 text-xs font-mono">🔐 {a.signature}</span>
+              <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+                <h3 className="font-bold mb-6">Action History</h3>
+                {actionList.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-3">📭</div>
+                    <p className="text-gray-600 text-sm">No actions logged yet</p>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-700"></div>
+                    <div className="space-y-6">
+                      {actionList.map((a, index) => (
+                        <div key={a.id} className="flex gap-4 relative">
+                          {/* Icon Circle */}
+                          <div className="w-10 h-10 rounded-full bg-blue-600 border-4 border-gray-900 flex items-center justify-center text-sm z-10 shrink-0">
+                            {index === 0 ? '⚡' : '✅'}
+                          </div>
+                          {/* Content Card */}
+                          <div className="flex-1 bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-blue-400 text-xs font-medium">
+                                Officer #{a.officer_id}
+                              </span>
+                              <span className="text-gray-500 text-xs">
+                                {new Date(a.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-white text-sm mb-3">
+                              {getCleanDescription(a.description)}
+                            </p>
+                            {/* Show photo if attached */}
+                            {getPhotoFromDescription(a.description) && (
+                              <img
+                                src={"http://localhost:5000" + getPhotoFromDescription(a.description)}
+                                alt="Action proof"
+                                className="w-full max-h-48 object-cover rounded-lg mb-3"
+                              />
+                            )}
+                            <div className="flex gap-2 flex-wrap">
+                              <span className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded-full">
+                                🏷️ {a.action_type}
+                              </span>
+                              <span className="bg-gray-900 text-gray-500 text-xs px-2 py-1 rounded-full font-mono">
+                                🔐 {a.digital_signature?.slice(0, 16)}...
+                              </span>
+                              <span className="bg-gray-700 text-gray-400 text-xs px-2 py-1 rounded-full">
+                                🕐 {new Date(a.created_at).toLocaleTimeString()}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
             </div>
           )}

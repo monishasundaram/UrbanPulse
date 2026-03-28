@@ -10,9 +10,12 @@ export default function Home() {
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">UP</div>
           <span className="text-xl font-bold text-white">UrbanPulse</span>
         </div>
-        <div className="flex gap-4">
-          <Link href="/complaints" className="text-gray-300 hover:text-white transition">
+        <div className="flex items-center gap-3">
+          <Link href="/complaints" className="text-gray-400 hover:text-white text-sm transition">
             View Complaints
+          </Link>
+          <Link href="/login" className="border border-gray-600 hover:border-gray-400 px-4 py-2 rounded-lg text-sm font-medium transition">
+            Login
           </Link>
           <Link href="/file-complaint" className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition">
             File Complaint
@@ -30,18 +33,18 @@ export default function Home() {
           <span className="text-blue-500">Public Record.</span>
         </h1>
         <p className="text-gray-400 text-lg max-w-xl mx-auto mb-10">
-          File grievances against public issues. Every complaint is permanently 
+          File grievances against public issues. Every complaint is permanently
           recorded on blockchain. Every action by officials is verified and visible to all.
         </p>
-        <div className="flex gap-4 justify-center">
-          <Link href="/login" className="text-gray-300 hover:text-white transition">
-        Login
-        </Link>
-        <Link href="/file-complaint" className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition">
-        File Complaint
-        </Link>
+        <div className="flex gap-4 justify-center flex-wrap">
+          <Link href="/file-complaint" className="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-lg font-semibold transition">
+            File a Complaint
+          </Link>
           <Link href="/complaints" className="border border-gray-600 hover:border-gray-400 px-8 py-3 rounded-lg font-semibold transition">
             View All Complaints
+          </Link>
+          <Link href="/login" className="border border-blue-600 hover:bg-blue-900 px-8 py-3 rounded-lg font-semibold transition text-blue-400">
+            Login / Register
           </Link>
         </div>
       </section>

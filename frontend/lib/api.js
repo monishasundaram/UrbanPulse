@@ -59,3 +59,34 @@ export async function loginCitizen(data) {
     return { success: false, message: error.message };
   }
 }
+// Log an officer action
+export async function logAction(data, photoFile) {
+  try {
+    const formData = new FormData();
+    formData.append('complaint_id', data.complaint_id);
+    formData.append('officer_id', data.officer_id);
+    formData.append('action_type', data.action_type);
+    formData.append('description', data.description);
+    formData.append('status', data.status);
+    if (photoFile) {
+      formData.append('photo', photoFile);
+    }
+    const res = await fetch(`${API_URL}/api/actions/log`, {
+      method: 'POST',
+      body: formData,
+    });
+    return res.json();
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+}
+
+// Get actions for a complaint
+export async function getActions(complaintId) {
+  try {
+    const res = await fetch(`${API_URL}/api/actions/${complaintId}`);
+    return res.json();
+  } catch (error) {
+    return { success: false, actions: [] };
+  }
+}
