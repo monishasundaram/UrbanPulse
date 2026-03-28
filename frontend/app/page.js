@@ -20,6 +20,9 @@ export default function Home() {
           <Link href="/file-complaint" className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition">
             File Complaint
           </Link>
+          <Link href="/admin" className="text-gray-400 hover:text-white text-sm transition">
+            Admin
+          </Link>
         </div>
       </nav>
 

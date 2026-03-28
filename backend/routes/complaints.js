@@ -1,6 +1,8 @@
 const pool = require('../db');
 const express = require('express');
 const router = express.Router();
+const { hashComplaintOnChain } = require('../blockchain');
+const { generateComplaintHash } = require('../blockchain');
 
 // Submit a new complaint
 router.post('/submit', async (req, res) => {
@@ -20,12 +22,49 @@ router.post('/submit', async (req, res) => {
     );
 
     const complaint = result.rows[0];
-    console.log('Saved complaint:', complaint);
-    res.json({
-      success: true,
-      message: 'Complaint submitted successfully',
-      complaint: complaint
-    });
+console.log('Saved complaint:', complaint);
+
+// Generate blockchain hash
+try {
+  const hash = generateComplaintHash(
+    complaint.complaint_number,
+    complaint.title,
+    complaint.created_at
+  );
+  await pool.query(
+    'UPDATE complaints SET blockchain_hash = $1 WHERE id = $2',
+    [hash, complaint.id]
+  );
+  complaint.blockchain_hash = hash;
+  console.log('✅ Complaint hashed:', hash);
+} catch (error) {
+  console.error('Hashing failed:', error.message);
+}
+
+// Hash on blockchain asynchronously
+try {
+  const crypto = require('crypto');
+  const evidenceHash = crypto
+    .createHash('sha256')
+    .update(complaint.complaint_number + complaint.title + complaint.created_at)
+    .digest('hex');
+
+  // Update blockchain hash in database
+  await pool.query(
+    'UPDATE complaints SET blockchain_hash = $1 WHERE id = $2',
+    [evidenceHash, complaint.id]
+  );
+  complaint.blockchain_hash = evidenceHash;
+  console.log('✅ Complaint hashed:', evidenceHash);
+} catch (error) {
+  console.error('Hashing failed:', error.message);
+}
+
+res.json({
+  success: true,
+  message: 'Complaint submitted successfully',
+  complaint: complaint
+});
 
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

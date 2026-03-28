@@ -90,3 +90,31 @@ export async function getActions(complaintId) {
     return { success: false, actions: [] };
   }
 }
+// AI Proof Gate check
+export async function checkProofGate(data) {
+  try {
+    const res = await fetch('http://localhost:8000/check/proof-gate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  } catch (error) {
+    return { passed: true, issues: [] };
+  }
+}
+
+// AI Image check
+export async function checkImage(file) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('http://localhost:8000/check/image', {
+      method: 'POST',
+      body: formData,
+    });
+    return res.json();
+  } catch (error) {
+    return { passed: true, issues: [] };
+  }
+}

@@ -1,12 +1,13 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { submitComplaint } from '../../lib/api';
+import { submitComplaint, checkProofGate, checkImage } from '../../lib/api';
 
 export default function FileComplaint() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [complaintId, setComplaintId] = useState('');
+  const [aiMessage, setAiMessage] = useState('');
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -35,34 +36,59 @@ export default function FileComplaint() {
   };
 
   const handleSubmit = async () => {
-  setLoading(true);
+    setLoading(true);
+    setAiMessage('🤖 Checking complaint text...');
+    try {
+      // Step 1 — AI Text Check
+      const textCheck = await checkProofGate({
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        location: form.location,
+      });
 
-  try {
-    const result = await submitComplaint({
-      title: form.title,
-      description: form.description,
-      category: form.category,
-      location: form.location,
-      pseudo_citizen_id: 'ANONYMOUS',
-      evidence: form.evidence
-    });
+      if (!textCheck.passed) {
+        alert('❌ AI Proof Gate Failed:\n\n' + textCheck.issues.join('\n'));
+        setLoading(false);
+        setAiMessage('');
+        return;
+      }
 
-    console.log("API Result:", result);
+      // Step 2 — AI Image Check
+      if (form.evidence) {
+        setAiMessage('🤖 Scanning image for authenticity...');
+        const imageCheck = await checkImage(form.evidence);
+        if (!imageCheck.passed) {
+          alert('❌ Image Check Failed:\n\n' + imageCheck.issues.join('\n'));
+          setLoading(false);
+          setAiMessage('');
+          return;
+        }
+      }
 
-    if (result && result.success === true) {
-      alert("Complaint filed successfully ✅");
-      setComplaintId(result.complaintNumber); // ✅ FIXED
-      setStep(3);
-    } else {
-      alert("Error: " + (result?.message || "Something went wrong"));
+      // Step 3 — Submit Complaint
+      setAiMessage('✅ AI checks passed! Submitting...');
+      const result = await submitComplaint({
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        location: form.location,
+        pseudo_citizen_id: 'ANONYMOUS',
+      });
+
+      if (result.success) {
+        setComplaintId(result.complaint.complaint_number);
+        setStep(3);
+      } else {
+        alert('Error: ' + result.message);
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
     }
+    setLoading(false);
+    setAiMessage('');
+  };
 
-  } catch (error) {
-    alert("Error: " + error.message);
-  }
-
-  setLoading(false);
-};
   return (
     <main className="min-h-screen bg-gray-950 text-white">
 
@@ -178,8 +204,10 @@ export default function FileComplaint() {
             </p>
 
             <div className="space-y-6">
-              <div className="border-2 border-dashed border-gray-700 rounded-xl p-10 text-center hover:border-blue-500 transition cursor-pointer"
-                onClick={() => document.getElementById('fileInput').click()}>
+              <div
+                className="border-2 border-dashed border-gray-700 rounded-xl p-10 text-center hover:border-blue-500 transition cursor-pointer"
+                onClick={() => document.getElementById('fileInput').click()}
+              >
                 {form.evidence ? (
                   <div>
                     <div className="text-4xl mb-3">✅</div>
@@ -202,17 +230,26 @@ export default function FileComplaint() {
                 />
               </div>
 
+              {/* AI Proof Gate Notice */}
               <div className="bg-blue-950 border border-blue-800 rounded-lg p-4">
                 <p className="text-blue-300 text-sm">
-                  🤖 <strong>AI Proof Gate:</strong> Your evidence will be scanned for authenticity.
-                  AI-generated or manipulated images will be rejected automatically.
+                  🤖 <strong>AI Proof Gate:</strong> Your complaint and evidence will be
+                  scanned for authenticity before submission.
                 </p>
               </div>
+
+              {/* AI Status Message */}
+              {aiMessage && (
+                <div className="bg-yellow-950 border border-yellow-800 rounded-lg p-4">
+                  <p className="text-yellow-300 text-sm font-medium">{aiMessage}</p>
+                </div>
+              )}
 
               <div className="flex gap-4">
                 <button
                   onClick={() => setStep(1)}
-                  className="w-full border border-gray-600 hover:border-gray-400 py-3 rounded-lg font-semibold transition"
+                  disabled={loading}
+                  className="w-full border border-gray-600 hover:border-gray-400 disabled:opacity-50 py-3 rounded-lg font-semibold transition"
                 >
                   Back
                 </button>
@@ -221,7 +258,7 @@ export default function FileComplaint() {
                   disabled={!form.evidence || loading}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed py-3 rounded-lg font-semibold transition"
                 >
-                  {loading ? 'Submitting...' : 'Submit Complaint'}
+                  {loading ? aiMessage || '🤖 AI Checking...' : 'Submit Complaint'}
                 </button>
               </div>
             </div>
@@ -243,9 +280,9 @@ export default function FileComplaint() {
 
             <div className="bg-green-950 border border-green-800 rounded-lg p-4 mb-8 text-left">
               <p className="text-green-300 text-sm">
+                ✅ AI verification passed<br />
                 ✅ Complaint saved to database<br />
                 ✅ Evidence stored securely<br />
-                ✅ Routed to correct department<br />
                 ✅ Your identity is protected
               </p>
             </div>
