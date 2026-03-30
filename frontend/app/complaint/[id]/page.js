@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
@@ -14,6 +15,7 @@ export default function ComplaintDetail({ params }) {
   const { id } = use(params);
   const [complaint, setComplaint] = useState(null);
   const [actions, setActions] = useState([]);
+  const [evidence, setEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,6 +23,7 @@ export default function ComplaintDetail({ params }) {
       const data = await getComplaint(id);
       if (data.success) {
         setComplaint(data.complaint);
+        setEvidence(data.evidence || []);
         const actionsData = await getActions(data.complaint.id);
         if (actionsData.success) setActions(actionsData.actions);
       }
@@ -83,8 +86,6 @@ export default function ComplaintDetail({ params }) {
 
         {/* Complaint Header */}
         <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 mb-8">
-
-          {/* ID and Status */}
           <div className="flex justify-between items-start mb-4">
             <span className="text-blue-400 font-mono text-sm">{complaint.complaint_number}</span>
             <span className={`text-xs px-3 py-1 rounded-full font-medium ${statusColors[complaint.status] || 'bg-gray-700 text-gray-300'}`}>
@@ -92,13 +93,9 @@ export default function ComplaintDetail({ params }) {
             </span>
           </div>
 
-          {/* Title */}
           <h1 className="text-3xl font-bold mb-4">{complaint.title}</h1>
-
-          {/* Description */}
           <p className="text-gray-400 mb-6">{complaint.description}</p>
 
-          {/* Details Grid */}
           <div className="grid grid-cols-2 gap-4 text-sm mb-6">
             <div className="bg-gray-800 rounded-xl p-4">
               <span className="text-gray-500 text-xs">Location</span>
@@ -122,9 +119,38 @@ export default function ComplaintDetail({ params }) {
           <div className="bg-blue-950 border border-blue-800 rounded-xl p-4">
             <p className="text-blue-300 text-sm">
               🔐 <strong>Blockchain Verified:</strong> This complaint is permanently recorded.
-              Complaint hash: <span className="font-mono text-xs">{complaint.blockchain_hash || 'Pending hash...'}</span>
+              Hash: <span className="font-mono text-xs break-all">{complaint.blockchain_hash || 'Pending...'}</span>
             </p>
           </div>
+
+          {/* Evidence Section */}
+          {evidence.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-bold mb-3 text-gray-300">📎 Submitted Evidence</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {evidence.map((ev, index) => (
+                  <div key={index} className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
+                    {ev.file_type?.startsWith('image') ? (
+                      <img
+                        src={"http://localhost:5000" + ev.file_path}
+                        alt="Evidence"
+                        className="w-full h-40 object-cover"
+                      />
+                    ) : (
+                      <div className="h-40 flex items-center justify-center">
+                        <p className="text-gray-400 text-sm">📹 Video Evidence</p>
+                      </div>
+                    )}
+                    <div className="p-2">
+                      <p className="text-xs text-gray-500">
+                        {ev.ai_authentic ? '✅ AI Verified' : '⚠️ Unverified'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Action Timeline */}
@@ -148,13 +174,9 @@ export default function ComplaintDetail({ params }) {
               <div className="space-y-6">
                 {actions.map((a, index) => (
                   <div key={a.id} className="flex gap-4 relative">
-                    {/* Icon */}
-                    <div className={`w-10 h-10 rounded-full border-4 border-gray-900 flex items-center justify-center text-sm z-10 shrink-0 ${
-                      index === 0 ? 'bg-blue-600' : 'bg-gray-700'
-                    }`}>
+                    <div className={`w-10 h-10 rounded-full border-4 border-gray-900 flex items-center justify-center text-sm z-10 shrink-0 ${index === 0 ? 'bg-blue-600' : 'bg-gray-700'}`}>
                       {index === 0 ? '⚡' : '✅'}
                     </div>
-                    {/* Card */}
                     <div className="flex-1 bg-gray-800 rounded-xl p-4 border border-gray-700">
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-blue-400 text-xs font-medium">
@@ -167,10 +189,9 @@ export default function ComplaintDetail({ params }) {
                       <p className="text-white text-sm mb-3">
                         {getCleanDescription(a.description)}
                       </p>
-                      {/* Photo proof */}
                       {getPhotoFromDescription(a.description) && (
                         <img
-                          src={`http://localhost:5000${getPhotoFromDescription(a.description)}`}
+                          src={"http://localhost:5000" + getPhotoFromDescription(a.description)}
                           alt="Action proof"
                           className="w-full max-h-48 object-cover rounded-lg mb-3"
                         />

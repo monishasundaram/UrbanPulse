@@ -1,4 +1,6 @@
 'use client';
+import dynamic from 'next/dynamic';
+const LocationPicker = dynamic(() => import('../../components/LocationPicker'), { ssr: false });
 import { useState } from 'react';
 import Link from 'next/link';
 import { submitComplaint, checkProofGate, checkImage } from '../../lib/api';
@@ -69,12 +71,12 @@ export default function FileComplaint() {
       // Step 3 — Submit Complaint
       setAiMessage('✅ AI checks passed! Submitting...');
       const result = await submitComplaint({
-        title: form.title,
-        description: form.description,
-        category: form.category,
-        location: form.location,
-        pseudo_citizen_id: 'ANONYMOUS',
-      });
+  title: form.title,
+  description: form.description,
+  category: form.category,
+  location: form.location,
+  pseudo_citizen_id: 'ANONYMOUS',
+}, form.evidence);
 
       if (result.success) {
         setComplaintId(result.complaint.complaint_number);
@@ -155,16 +157,21 @@ export default function FileComplaint() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={form.location}
-                  onChange={handleChange}
-                  placeholder="e.g. Anna Nagar, Chennai"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-                />
-              </div>
+  <label className="block text-sm font-medium text-gray-300 mb-2">Location</label>
+  <LocationPicker
+    onLocationSelect={(loc) => {
+      setForm({ ...form, location: loc.address });
+    }}
+  />
+  <input
+    type="text"
+    name="location"
+    value={form.location}
+    onChange={handleChange}
+    placeholder="e.g. Anna Nagar, Chennai"
+    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 mt-2"
+  />
+</div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">

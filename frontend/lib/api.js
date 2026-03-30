@@ -1,11 +1,19 @@
 const API_URL = 'http://localhost:5000';
 
-export async function submitComplaint(data) {
+export async function submitComplaint(data, evidenceFile) {
   try {
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('description', data.description);
+    formData.append('category', data.category);
+    formData.append('location', data.location);
+    formData.append('pseudo_citizen_id', data.pseudo_citizen_id || 'ANONYMOUS');
+    if (evidenceFile) {
+      formData.append('evidence', evidenceFile);
+    }
     const res = await fetch(`${API_URL}/api/complaints/submit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: formData,
     });
     const json = await res.json();
     console.log('API response:', json);
