@@ -84,13 +84,13 @@ export default function Login() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Link href="/" className="flex-1 border border-gray-600 hover:border-gray-400 py-3 rounded-lg font-semibold transition text-center">
-              Home
-            </Link>
-            <Link href="/file-complaint" className="flex-1 bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition text-center">
-              File Complaint
-            </Link>
-          </div>
+  <Link href="/profile" className="flex-1 border border-gray-600 hover:border-gray-400 py-3 rounded-lg font-semibold transition text-center">
+    My Profile
+  </Link>
+  <Link href="/file-complaint" className="flex-1 bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition text-center">
+    File Complaint
+  </Link>
+</div>
         </div>
       </main>
     );

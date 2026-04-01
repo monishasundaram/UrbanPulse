@@ -10,6 +10,9 @@ export default function Home() {
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">UP</div>
           <span className="text-xl font-bold text-white">UrbanPulse</span>
         </div>
+        <Link href="/profile" className="text-gray-400 hover:text-white text-sm transition">
+  Profile
+  </Link>
         <div className="flex items-center gap-3">
           <Link href="/complaints" className="text-gray-400 hover:text-white text-sm transition">
             View Complaints
