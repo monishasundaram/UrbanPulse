@@ -6,28 +6,28 @@ export default function Home() {
 
       {/* Navbar */}
       <nav className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">UP</div>
-          <span className="text-xl font-bold text-white">UrbanPulse</span>
-        </div>
-        <Link href="/profile" className="text-gray-400 hover:text-white text-sm transition">
-  Profile
-  </Link>
-        <div className="flex items-center gap-3">
-          <Link href="/complaints" className="text-gray-400 hover:text-white text-sm transition">
-            View Complaints
-          </Link>
-          <Link href="/login" className="border border-gray-600 hover:border-gray-400 px-4 py-2 rounded-lg text-sm font-medium transition">
-            Login
-          </Link>
-          <Link href="/file-complaint" className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition">
-            File Complaint
-          </Link>
-          <Link href="/admin" className="text-gray-400 hover:text-white text-sm transition">
-            Admin
-          </Link>
-        </div>
-      </nav>
+  <div className="flex items-center gap-2">
+    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">UP</div>
+    <span className="text-xl font-bold text-white">UrbanPulse</span>
+  </div>
+  <div className="flex items-center gap-3">
+    <Link href="/complaints" className="text-gray-400 hover:text-white text-sm transition">
+      View Complaints
+    </Link>
+    <Link href="/profile" className="text-gray-400 hover:text-white text-sm transition">
+      Profile
+    </Link>
+    <Link href="/admin" className="text-gray-400 hover:text-white text-sm transition">
+      Admin
+    </Link>
+    <Link href="/login" className="border border-gray-600 hover:border-gray-400 px-4 py-2 rounded-lg text-sm font-medium transition">
+      Login
+    </Link>
+    <Link href="/file-complaint" className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition">
+      File Complaint
+    </Link>
+  </div>
+</nav>
 
       {/* Hero Section */}
       <section className="text-center py-24 px-6">
