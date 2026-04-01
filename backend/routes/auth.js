@@ -3,11 +3,12 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
+const { sendWelcomeEmail } = require('../email');
 
 // Register Citizen
 router.post('/register', async (req, res) => {
   try {
-    const { name, phone, password, aadhaar } = req.body;
+    const { name, phone, password, aadhaar, email } = req.body;
 
     // Check if phone already exists
     const existing = await pool.query(
@@ -33,6 +34,11 @@ router.post('/register', async (req, res) => {
       [pseudoId, name, phone, aadhaar, hashedPassword]
     );
 
+    // Send welcome email
+    if (email) {
+  await sendWelcomeEmail(email, { pseudoId });
+}
+
     res.json({
       success: true,
       message: 'Citizen registered successfully',
@@ -48,7 +54,6 @@ router.post('/login', async (req, res) => {
   try {
     const { phone, password } = req.body;
 
-    // Find citizen
     const result = await pool.query(
       'SELECT * FROM citizens WHERE phone_encrypted = $1',
       [phone]
@@ -58,14 +63,11 @@ router.post('/login', async (req, res) => {
     }
 
     const citizen = result.rows[0];
-
-    // Check password
     const valid = await bcrypt.compare(password, citizen.password_hash);
     if (!valid) {
       return res.status(400).json({ success: false, message: 'Invalid phone or password' });
     }
 
-    // Generate token
     const token = jwt.sign(
       { id: citizen.id, pseudoId: citizen.pseudo_id, role: 'citizen' },
       process.env.JWT_SECRET,

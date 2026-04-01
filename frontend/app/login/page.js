@@ -11,6 +11,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '',
+    email: '',
     phone: '',
     password: '',
     aadhaar: '',
@@ -29,6 +30,7 @@ export default function Login() {
       if (mode === 'register') {
         result = await registerCitizen({
           name: form.name,
+          email: form.email,
           phone: form.phone,
           password: form.password,
           aadhaar: form.aadhaar,
@@ -41,7 +43,6 @@ export default function Login() {
       }
 
       if (result.success) {
-        // Save token and pseudoId to localStorage
         if (result.token) {
           localStorage.setItem('token', result.token);
           localStorage.setItem('pseudoId', result.pseudoId);
@@ -68,6 +69,13 @@ export default function Login() {
           <p className="text-gray-400 mb-6">
             {mode === 'login' ? 'You are now logged in.' : 'Your anonymous citizen account is ready.'}
           </p>
+          {mode === 'register' && form.email && (
+            <div className="bg-blue-950 border border-blue-800 rounded-lg p-3 mb-4">
+              <p className="text-blue-300 text-xs">
+                📧 Welcome email sent to {form.email}
+              </p>
+            </div>
+          )}
           <div className="bg-gray-800 rounded-xl p-4 mb-6">
             <p className="text-gray-400 text-sm">Your Citizen ID</p>
             <p className="text-xl font-bold text-blue-400">{citizenId}</p>
@@ -116,6 +124,7 @@ export default function Login() {
 
         <div className="space-y-4">
 
+          {/* Name - Register only */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
@@ -130,6 +139,25 @@ export default function Login() {
             </div>
           )}
 
+          {/* Email - Register only */}
+          {mode === 'register' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Email Address
+                <span className="text-gray-500 font-normal ml-2">(for notifications)</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="your@email.com"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+          )}
+
+          {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
             <input
@@ -142,6 +170,7 @@ export default function Login() {
             />
           </div>
 
+          {/* Aadhaar - Register only */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -160,6 +189,7 @@ export default function Login() {
             </div>
           )}
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
             <input
