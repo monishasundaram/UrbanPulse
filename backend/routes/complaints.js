@@ -7,7 +7,7 @@ const fs = require('fs');
 const { generateComplaintHash } = require('../blockchain');
 
 // Create uploads folder
-const uploadDir = 'uploads/evidence';
+const uploadDir = '/tmp/uploads/evidence';
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

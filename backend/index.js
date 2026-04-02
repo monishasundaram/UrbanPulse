@@ -17,7 +17,7 @@ app.use(cors({
 app.use(express.json());
 
 // Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static('/tmp/uploads'));
 
 // Database connection
 require('./db');
@@ -34,6 +34,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/complaints', require('./routes/complaints'));
 app.use('/api/actions', require('./routes/actions'));
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
