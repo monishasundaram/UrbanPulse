@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 import dynamic from 'next/dynamic';
 const LocationPicker = dynamic(() => import('../../components/LocationPicker'), { ssr: false });

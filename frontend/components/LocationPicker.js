@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
 
-export default function LocationPicker({ onLocationSelect }) {
+export default function LocationPicker({ onLocationSelect, onAccuracyChange }) {
   const [position, setPosition] = useState(null);
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
+  const [accuracyLevel, setAccuracyLevel] = useState(null);
 
   const getCurrentLocation = () => {
     setLoading(true);
@@ -12,7 +13,17 @@ export default function LocationPicker({ onLocationSelect }) {
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           const { latitude, longitude, accuracy } = pos.coords;
+
+          // Check accuracy level
+          let level = 'low';
+          if (accuracy <= 100) level = 'high';
+          else if (accuracy <= 500) level = 'medium';
+          else level = 'low';
+
+          setAccuracyLevel(level);
           setPosition({ lat: latitude, lng: longitude, accuracy });
+
+          if (onAccuracyChange) onAccuracyChange(level);
 
           try {
             const res = await fetch(
@@ -25,40 +36,30 @@ export default function LocationPicker({ onLocationSelect }) {
               lat: latitude,
               lng: longitude,
               address: addr,
+              accuracy: accuracy,
+              accuracyLevel: level,
             });
           } catch (error) {
             const addr = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
             setAddress(addr);
-            onLocationSelect({ lat: latitude, lng: longitude, address: addr });
+            onLocationSelect({ lat: latitude, lng: longitude, address: addr, accuracy, accuracyLevel: level });
           }
           setLoading(false);
         },
-        () => {
-          alert('Could not get location. Please enter manually.');
+        (err) => {
+          alert('❌ Could not get location. Please allow location access and try again.');
           setLoading(false);
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 15000,
           maximumAge: 0
         }
       );
     } else {
-      alert('Geolocation is not supported by your browser.');
+      alert('❌ Geolocation is not supported by your browser.');
       setLoading(false);
     }
-  };
-
-  const getAccuracyColor = (accuracy) => {
-    if (accuracy <= 50) return 'text-green-400';
-    if (accuracy <= 200) return 'text-yellow-400';
-    return 'text-red-400';
-  };
-
-  const getAccuracyLabel = (accuracy) => {
-    if (accuracy <= 50) return 'High Accuracy';
-    if (accuracy <= 200) return 'Medium Accuracy';
-    return 'Low Accuracy';
   };
 
   return (
@@ -72,36 +73,47 @@ export default function LocationPicker({ onLocationSelect }) {
         {loading ? (
           <>⏳ Getting your location...</>
         ) : (
-          <>📍 Use My Current Location</>
+          <>📍 Get My Live Location (Required)</>
         )}
       </button>
 
-      {position && (
-        <div className="bg-gray-800 rounded-xl p-4 border border-green-800">
-          <div className="flex items-start gap-3">
-            <div className="text-2xl">✅</div>
-            <div className="flex-1">
-              <p className="text-green-400 text-xs font-medium mb-1">Location Captured!</p>
-              <p className="text-white text-sm">{address}</p>
-              <p className="text-gray-500 text-xs mt-1">
-                📐 {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
-              </p>
-              {position.accuracy && (
-                <p className={`text-xs mt-1 ${getAccuracyColor(position.accuracy)}`}>
-                  🎯 {getAccuracyLabel(position.accuracy)} — ±{Math.round(position.accuracy)}m
-                </p>
-              )}
-            </div>
-          </div>
+      {/* Accuracy Warning */}
+      {position && accuracyLevel === 'low' && (
+        <div className="bg-red-950 border border-red-800 rounded-lg p-3">
+          <p className="text-red-300 text-sm">
+            ❌ <strong>Location accuracy too low</strong> — ±{Math.round(position.accuracy)}m<br/>
+            Please move to an open area and try again. Medium accuracy required.
+          </p>
+          <button
+            onClick={getCurrentLocation}
+            className="mt-2 text-red-400 hover:text-red-300 text-xs underline"
+          >
+            Try again
+          </button>
         </div>
       )}
 
-      {/* Accuracy explanation */}
-      {position && position.accuracy > 200 && (
+      {position && accuracyLevel === 'medium' && (
         <div className="bg-yellow-950 border border-yellow-800 rounded-lg p-3">
-          <p className="text-yellow-300 text-xs">
-            ⚠️ Low accuracy detected. This is normal for laptops without GPS.
-            You can improve accuracy by typing your location manually below.
+          <p className="text-yellow-300 text-sm">
+            ⚠️ <strong>Medium accuracy</strong> — ±{Math.round(position.accuracy)}m — Accepted
+          </p>
+        </div>
+      )}
+
+      {position && accuracyLevel === 'high' && (
+        <div className="bg-green-950 border border-green-800 rounded-lg p-3">
+          <p className="text-green-300 text-sm">
+            ✅ <strong>High accuracy</strong> — ±{Math.round(position.accuracy)}m — 
+          </p>
+        </div>
+      )}
+
+      {position && (
+        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+          <p className="text-white text-sm">{address}</p>
+          <p className="text-gray-500 text-xs mt-1">
+            📐 {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
           </p>
         </div>
       )}
