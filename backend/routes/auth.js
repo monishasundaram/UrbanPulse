@@ -36,7 +36,9 @@ router.post('/register', async (req, res) => {
 
     // Send welcome email
     if (email) {
-  await sendWelcomeEmail(email, { pseudoId });
+  sendWelcomeEmail(email, { pseudoId }).catch(err => 
+    console.error('Email failed silently:', err.message)
+  );
 }
 
     res.json({
