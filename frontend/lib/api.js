@@ -1,5 +1,5 @@
-const API_URL = typeof window !== 'undefined' && window.location.hostname !== 'localhost' 
-  ? 'https://urbanpulse-production-2ade.up.railway.app'
+const API_URL = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+  ? 'https://urbanpulse-backend-5ejl.onrender.com'
   : 'http://localhost:5000';
 
 export async function submitComplaint(data, evidenceFile) {

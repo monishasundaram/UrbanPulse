@@ -1,7 +1,15 @@
 const { Resend } = require('resend');
 require('dotenv').config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend = null;
+try {
+  if (process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+} catch (error) {
+  console.log('Resend not configured');
+}
+
 
 // Send welcome email
 async function sendWelcomeEmail(toEmail, citizenData) {
