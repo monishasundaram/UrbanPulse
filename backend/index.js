@@ -35,6 +35,17 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/complaints', require('./routes/complaints'));
 app.use('/api/actions', require('./routes/actions'));
 
+// Keep alive ping for Render free tier
+if (process.env.NODE_ENV === 'production') {
+  setInterval(async () => {
+    try {
+      await pool.query('SELECT 1');
+      console.log('Keep alive ping');
+    } catch (err) {
+      console.error('Keep alive failed:', err.message);
+    }
+  }, 14 * 60 * 1000); // Every 14 minutes
+}
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
