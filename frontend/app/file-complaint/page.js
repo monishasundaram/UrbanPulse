@@ -1,3 +1,4 @@
+
 /* eslint-disable @next/next/no-img-element */
 'use client';
 import dynamic from 'next/dynamic';
@@ -5,6 +6,7 @@ const LocationPicker = dynamic(() => import('../../components/LocationPicker'), 
 import { useState } from 'react';
 import Link from 'next/link';
 import { submitComplaint, checkProofGate, checkImage } from '../../lib/api';
+
 
 export default function FileComplaint() {
   const [step, setStep] = useState(1);
