@@ -3,12 +3,17 @@
 'use client';
 import dynamic from 'next/dynamic';
 const LocationPicker = dynamic(() => import('../../components/LocationPicker'), { ssr: false });
-import { useState } from 'react';
 import Link from 'next/link';
 import { submitComplaint, checkProofGate, checkImage } from '../../lib/api';
-
+import { useState, useEffect } from 'react';
 
 export default function FileComplaint() {
+  useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.location.href = '/login';
+  }
+}, []);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [complaintId, setComplaintId] = useState('');
