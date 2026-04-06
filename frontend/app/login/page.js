@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { registerCitizen, loginCitizen } from '../../lib/api';
+import { useEffect } from 'react';
+import { auth } from '../../lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
 export default function Login() {
   const [mode, setMode] = useState('login');
@@ -9,6 +12,11 @@ export default function Login() {
   const [success, setSuccess] = useState(false);
   const [citizenId, setCitizenId] = useState('');
   const [error, setError] = useState('');
+  const [aadhaarVerified, setAadhaarVerified] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -16,13 +24,54 @@ export default function Login() {
     password: '',
     aadhaar: '',
   });
+  
+  useEffect(() => {
+    if (typeof window !== "undefined" && !window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        "recaptcha-container",
+        { size: "normal" },
+        auth
+      );
+    }
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
   };
 
+  const verifyAadhaar = () => {
+    if (form.aadhaar.length !== 12) {
+      setOtpError('❌ Aadhaar must be exactly 12 digits');
+      return;
+    }
+    if (!form.phone || form.phone.length !== 10) {
+      setOtpError('❌ Please enter your 10 digit mobile number first');
+      return;
+    }
+    const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(mockOtp);
+    setShowOtp(true);
+    setOtpError('');
+    alert(`📱 OTP sent to mobile number ending in ...${form.phone.slice(-4)}\n\nDemo OTP: ${mockOtp}\n\n(In production this will be sent via SMS)`);
+  };
+
+  const verifyOtp = async () => {
+  try {
+    await window.confirmationResult.confirm(otp);
+    setAadhaarVerified(true);
+    setShowOtp(false);
+    setOtp('');
+    setOtpError('');
+  } catch (error) {
+    setOtpError('❌ Wrong OTP. Please try again.');
+  }
+};
   const handleSubmit = async () => {
+    if (mode === 'register' && !aadhaarVerified) {
+      setError('❌ Please verify your Aadhaar number first');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -84,13 +133,13 @@ export default function Login() {
             </p>
           </div>
           <div className="flex gap-3">
-  <Link href="/profile" className="flex-1 border border-gray-600 hover:border-gray-400 py-3 rounded-lg font-semibold transition text-center">
-    My Profile
-  </Link>
-  <Link href="/file-complaint" className="flex-1 bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition text-center">
-    File Complaint
-  </Link>
-</div>
+            <Link href="/profile" className="flex-1 border border-gray-600 hover:border-gray-400 py-3 rounded-lg font-semibold transition text-center">
+              My Profile
+            </Link>
+            <Link href="/file-complaint" className="flex-1 bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition text-center">
+              File Complaint
+            </Link>
+          </div>
         </div>
       </main>
     );
@@ -109,7 +158,7 @@ export default function Login() {
         {/* Toggle */}
         <div className="flex bg-gray-800 rounded-lg p-1 mb-8">
           <button
-            onClick={() => { setMode('login'); setError(''); }}
+            onClick={() => { setMode('login'); setError(''); setAadhaarVerified(false); setShowOtp(false); }}
             className={`flex-1 py-2 rounded-md text-sm font-medium transition ${mode === 'login' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
           >
             Login
@@ -124,7 +173,7 @@ export default function Login() {
 
         <div className="space-y-4">
 
-          {/* Name - Register only */}
+          {/* Name */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
@@ -139,7 +188,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* Email - Register only */}
+          {/* Email */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -166,26 +215,73 @@ export default function Login() {
               value={form.phone}
               onChange={handleChange}
               placeholder="10 digit mobile number"
+              maxLength={10}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
             />
           </div>
 
-          {/* Aadhaar - Register only */}
+          {/* Aadhaar with OTP Verify */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Aadhaar Number
                 <span className="text-gray-500 font-normal ml-2">(never shown publicly)</span>
               </label>
-              <input
-                type="text"
-                name="aadhaar"
-                value={form.aadhaar}
-                onChange={handleChange}
-                placeholder="12 digit Aadhaar number"
-                maxLength={12}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  name="aadhaar"
+                  value={form.aadhaar}
+                  onChange={handleChange}
+                  placeholder="12 digit Aadhaar number"
+                  maxLength={12}
+                  disabled={aadhaarVerified}
+                  className={`flex-1 bg-gray-800 border rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 ${aadhaarVerified ? 'border-green-600 opacity-75' : 'border-gray-700'}`}
+                />
+                <button
+                  type="button"
+                  onClick={verifyAadhaar}
+                  disabled={form.aadhaar.length !== 12 || aadhaarVerified}
+                  className={`px-4 py-3 rounded-lg text-sm font-medium transition ${aadhaarVerified ? 'bg-green-700 text-white' : 'bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white'}`}
+                >
+                  {aadhaarVerified ? '✅ Done' : 'Verify'}
+                </button>
+              </div>
+
+              {/* OTP Input */}
+              {showOtp && (
+                <div className="mt-3 space-y-2">
+                  <div className="bg-blue-950 border border-blue-800 rounded-lg p-3">
+                    <p className="text-blue-300 text-xs">
+                      📱 OTP sent to mobile ending in ...{form.phone.slice(-4)}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={otp}
+                      onChange={(e) => { setOtp(e.target.value); setOtpError(''); }}
+                      placeholder="Enter 6 digit OTP"
+                      maxLength={6}
+                      className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={verifyOtp}
+                      disabled={otp.length !== 6}
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-medium transition text-white"
+                    >
+                      Submit
+                    </button>
+                  </div>
+                  {otpError && <p className="text-red-400 text-xs">{otpError}</p>}
+                </div>
+              )}
+
+              {aadhaarVerified && (
+                <p className="text-green-400 text-xs mt-2">✅ Aadhaar verified with mobile number!</p>
+              )}
+              {otpError && !showOtp && <p className="text-red-400 text-xs mt-1">{otpError}</p>}
             </div>
           )}
 
@@ -205,7 +301,7 @@ export default function Login() {
           {/* Error Message */}
           {error && (
             <div className="bg-red-950 border border-red-800 rounded-lg p-3">
-              <p className="text-red-300 text-sm">❌ {error}</p>
+              <p className="text-red-300 text-sm">{error}</p>
             </div>
           )}
 
@@ -219,11 +315,17 @@ export default function Login() {
 
           <button
             onClick={handleSubmit}
-            disabled={loading || !form.phone || !form.password}
+            disabled={loading || !form.phone || !form.password || (mode === 'register' && !aadhaarVerified)}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed py-3 rounded-lg font-semibold transition mt-2"
           >
             {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
           </button>
+
+          {mode === 'register' && !aadhaarVerified && (
+            <p className="text-yellow-400 text-xs text-center">
+              ⚠️ You must verify your Aadhaar before creating account
+            </p>
+          )}
 
           <div className="text-center text-sm text-gray-500">
             {mode === 'login' ? (
