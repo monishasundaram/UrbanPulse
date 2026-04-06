@@ -2,9 +2,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { registerCitizen, loginCitizen } from '../../lib/api';
-import { useEffect } from 'react';
-import { auth } from '../../lib/firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
 export default function Login() {
   const [mode, setMode] = useState('login');
@@ -24,16 +21,6 @@ export default function Login() {
     password: '',
     aadhaar: '',
   });
-  
-  useEffect(() => {
-    if (typeof window !== "undefined" && !window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        "recaptcha-container",
-        { size: "normal" },
-        auth
-      );
-    }
-  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -41,31 +28,31 @@ export default function Login() {
   };
 
   const verifyAadhaar = () => {
-  if (form.aadhaar.length !== 12) {
-    setOtpError('❌ Aadhaar must be exactly 12 digits');
-    return;
-  }
-  if (!form.phone || form.phone.length !== 10) {
-    setOtpError('❌ Please enter your 10 digit mobile number first');
-    return;
-  }
-  const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
-  setGeneratedOtp(mockOtp);
-  setShowOtp(true);
-  setOtpError('');
-  alert(`📱 OTP for demo: ${mockOtp}\n\nIn production this will be sent via SMS to ...${form.phone.slice(-4)}`);
-};
-
-const verifyOtp = () => {
-  if (otp === generatedOtp) {
-    setAadhaarVerified(true);
-    setShowOtp(false);
+    if (form.aadhaar.length !== 12) {
+      setOtpError('❌ Aadhaar must be exactly 12 digits');
+      return;
+    }
+    if (!form.phone || form.phone.length !== 10) {
+      setOtpError('❌ Please enter your 10 digit mobile number first');
+      return;
+    }
+    const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(mockOtp);
+    setShowOtp(true);
     setOtpError('');
-    setOtp('');
-  } else {
-    setOtpError('❌ Wrong OTP. Please try again.');
-  }
-};
+    alert(`📱 OTP for demo: ${mockOtp}\n\nIn production this will be sent via SMS to ...${form.phone.slice(-4)}`);
+  };
+
+  const verifyOtp = () => {
+    if (otp === generatedOtp) {
+      setAadhaarVerified(true);
+      setShowOtp(false);
+      setOtpError('');
+      setOtp('');
+    } else {
+      setOtpError('❌ Wrong OTP. Please try again.');
+    }
+  };
 
   const handleSubmit = async () => {
     if (mode === 'register' && !aadhaarVerified) {
@@ -220,7 +207,7 @@ const verifyOtp = () => {
             />
           </div>
 
-          {/* Aadhaar with OTP Verify */}
+          {/* Aadhaar with OTP */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
