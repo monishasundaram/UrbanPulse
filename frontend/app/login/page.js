@@ -41,32 +41,32 @@ export default function Login() {
   };
 
   const verifyAadhaar = () => {
-    if (form.aadhaar.length !== 12) {
-      setOtpError('❌ Aadhaar must be exactly 12 digits');
-      return;
-    }
-    if (!form.phone || form.phone.length !== 10) {
-      setOtpError('❌ Please enter your 10 digit mobile number first');
-      return;
-    }
-    const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(mockOtp);
-    setShowOtp(true);
-    setOtpError('');
-    alert(`📱 OTP sent to mobile number ending in ...${form.phone.slice(-4)}\n\nDemo OTP: ${mockOtp}\n\n(In production this will be sent via SMS)`);
-  };
+  if (form.aadhaar.length !== 12) {
+    setOtpError('❌ Aadhaar must be exactly 12 digits');
+    return;
+  }
+  if (!form.phone || form.phone.length !== 10) {
+    setOtpError('❌ Please enter your 10 digit mobile number first');
+    return;
+  }
+  const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
+  setGeneratedOtp(mockOtp);
+  setShowOtp(true);
+  setOtpError('');
+  alert(`📱 OTP for demo: ${mockOtp}\n\nIn production this will be sent via SMS to ...${form.phone.slice(-4)}`);
+};
 
-  const verifyOtp = async () => {
-  try {
-    await window.confirmationResult.confirm(otp);
+const verifyOtp = () => {
+  if (otp === generatedOtp) {
     setAadhaarVerified(true);
     setShowOtp(false);
-    setOtp('');
     setOtpError('');
-  } catch (error) {
+    setOtp('');
+  } else {
     setOtpError('❌ Wrong OTP. Please try again.');
   }
 };
+
   const handleSubmit = async () => {
     if (mode === 'register' && !aadhaarVerified) {
       setError('❌ Please verify your Aadhaar number first');
