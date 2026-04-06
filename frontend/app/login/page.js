@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { registerCitizen, loginCitizen } from '../../lib/api';
 import { useEffect } from 'react';
-import { auth } from '../../lib/firebase';
+import { auth } from '../../firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
 export default function Login() {
@@ -24,7 +24,7 @@ export default function Login() {
     password: '',
     aadhaar: '',
   });
-  
+
   useEffect(() => {
     if (typeof window !== "undefined" && !window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(
