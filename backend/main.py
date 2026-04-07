@@ -5,11 +5,17 @@ import uvicorn
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",
+    "https://urban-pulse.web.app",
+    "https://urban-pulse.firebaseapp.com"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # later restrict to your frontend domain
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -17,12 +23,7 @@ app.add_middleware(
 def read_root():
     return {"status": "AI service running"}
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Duplicate permissive middleware removed
 
 # ─── TEXT CHECKER ───
 class TextCheck(BaseModel):

@@ -205,7 +205,11 @@ export default function FileComplaint() {
                     setForm(prev => ({
                       ...prev,
                       location: loc.address,
-                      locationAccuracy: loc.accuracyLevel
+                      locationAccuracy: loc.accuracyLevel,
+                      user_lat: loc.gpsLocation?.lat,
+                      user_lng: loc.gpsLocation?.lng,
+                      problem_lat: loc.problemLocation?.lat,
+                      problem_lng: loc.problemLocation?.lng
                     }));
                     setErrors(prev => ({ ...prev, location: '' }));
                   }}

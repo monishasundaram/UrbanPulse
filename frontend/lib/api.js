@@ -9,6 +9,10 @@ export async function submitComplaint(data, evidenceFile) {
     formData.append('description', data.description);
     formData.append('category', data.category);
     formData.append('location', data.location);
+    if (data.user_lat) formData.append('user_lat', data.user_lat);
+    if (data.user_lng) formData.append('user_lng', data.user_lng);
+    if (data.problem_lat) formData.append('problem_lat', data.problem_lat);
+    if (data.problem_lng) formData.append('problem_lng', data.problem_lng);
     formData.append('pseudo_citizen_id', data.pseudo_citizen_id || 'ANONYMOUS');
     if (evidenceFile) {
       formData.append('evidence', evidenceFile);
@@ -18,7 +22,6 @@ export async function submitComplaint(data, evidenceFile) {
       body: formData,
     });
     const json = await res.json();
-    console.log('API response:', json);
     return json;
   } catch (error) {
     console.error('Submit error:', error);
@@ -69,6 +72,7 @@ export async function loginCitizen(data) {
     return { success: false, message: error.message };
   }
 }
+
 // Log an officer action
 export async function logAction(data, photoFile) {
   try {
@@ -100,35 +104,36 @@ export async function getActions(complaintId) {
     return { success: false, actions: [] };
   }
 }
+
 // AI Proof Gate check
+const AI_URL = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+  ? 'https://urbanpulse-ai-xxx.onrender.com' // Placeholder for cloud run
+  : 'http://localhost:8000';
+
 export async function checkProofGate(data) {
   try {
-    // Skip AI check if not available
-    return { passed: true, issues: [] };
-    const res = await fetch('http://localhost:8000/check/proof-gate', {
+    const res = await fetch(`${AI_URL}/check/proof-gate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
     return res.json();
   } catch (error) {
-    return { passed: true, issues: [] };
+    return { passed: false, issues: ["AI Service unreachable"] };
   }
 }
 
 // AI Image check
 export async function checkImage(file) {
   try {
-    // Skip AI check if not available
-    return { passed: true, issues: [] };
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch('http://localhost:8000/check/image', {
+    const res = await fetch(`${AI_URL}/check/image`, {
       method: 'POST',
       body: formData,
     });
     return res.json();
   } catch (error) {
-    return { passed: true, issues: [] };
+    return { passed: false, issues: ["AI Service unreachable"] };
   }
 }
