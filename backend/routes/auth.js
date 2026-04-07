@@ -3,7 +3,6 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
-const { sendWelcomeEmail } = require('../email');
 
 // Register Citizen
 router.post('/register', async (req, res) => {
@@ -28,18 +27,11 @@ router.post('/register', async (req, res) => {
     // Save to database
     const result = await pool.query(
       `INSERT INTO citizens 
-        (pseudo_id, name_encrypted, phone_encrypted, aadhaar_encrypted, password_hash)
-       VALUES ($1, $2, $3, $4, $5)
+        (pseudo_id, name_encrypted, phone_encrypted, aadhaar_encrypted, password_hash, email)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING pseudo_id, created_at`,
-      [pseudoId, name, phone, aadhaar, hashedPassword]
+      [pseudoId, name, phone, aadhaar, hashedPassword, email]
     );
-
-    // Send welcome email
-    if (email) {
-  sendWelcomeEmail(email, { pseudoId }).catch(err => 
-    console.error('Email failed silently:', err.message)
-  );
-}
 
     res.json({
       success: true,
@@ -47,6 +39,7 @@ router.post('/register', async (req, res) => {
       pseudoId: result.rows[0].pseudo_id
     });
   } catch (error) {
+    console.error('Register error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -83,14 +76,9 @@ router.post('/login', async (req, res) => {
       pseudoId: citizen.pseudo_id
     });
   } catch (error) {
+    console.error('Login error:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
-});
-
-router.get('/test-email', async (req, res) => {
-  const { sendWelcomeEmail } = require('../email');
-  const result = await sendWelcomeEmail('monishasundaram17@gmail.com', { pseudoId: 'TEST123' });
-  res.json({ success: result });
 });
 
 module.exports = router;
