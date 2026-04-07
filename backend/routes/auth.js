@@ -119,12 +119,11 @@ router.post('/officer-login', async (req, res) => {
   }
 });
 
-// Admin — Create Officer (protected, only admin can call this)
+// Admin — Create Officer
 router.post('/create-officer', async (req, res) => {
   try {
     const { name, username, password, adminSecret } = req.body;
 
-    // Simple admin secret check
     if (adminSecret !== process.env.ADMIN_SECRET) {
       return res.status(403).json({ success: false, message: 'Unauthorized' });
     }
@@ -187,7 +186,7 @@ router.post('/officers/approve', async (req, res) => {
   }
 });
 
-// TEMP — Setup officers table
+// TEMP — create officers table, delete after running once
 router.get('/setup-officers', async (req, res) => {
   try {
     await pool.query(`
