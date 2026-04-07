@@ -1,53 +1,108 @@
 const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const path = require('path');
-require('dotenv').config();
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const pool = require('../db');
+const { sendWelcomeEmail } = require('../email');
 
-const app = express();
+// Register Citizen
+router.post('/register', async (req, res) => {
+  try {
+    const { name, phone, password, aadhaar, email } = req.body;
 
-// Middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
-}));
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-}));
-app.use(express.json());
-
-// Serve uploaded files
-app.use('/uploads', express.static('/tmp/uploads'));
-
-// Database connection
-require('./db');
-
-// Test route
-app.get('/', (req, res) => {
-  res.json({
-    message: 'UrbanPulse API is running!',
-    version: '1.0.0'
-  });
-});
-
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/complaints', require('./routes/complaints'));
-app.use('/api/actions', require('./routes/actions'));
-
-// Keep alive ping for Render free tier
-if (process.env.NODE_ENV === 'production') {
-  setInterval(async () => {
-    try {
-      await pool.query('SELECT 1');
-      console.log('Keep alive ping');
-    } catch (err) {
-      console.error('Keep alive failed:', err.message);
+    // Check if phone already exists
+    const existing = await pool.query(
+      'SELECT * FROM citizens WHERE phone_encrypted = $1',
+      [phone]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ success: false, message: 'Phone already registered' });
     }
-  }, 14 * 60 * 1000); // Every 14 minutes
-}
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`UrbanPulse backend running on port ${PORT}`);
+    // Generate pseudonymous ID
+    const pseudoId = 'CIT' + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Save to database (now includes email)
+    const result = await pool.query(
+      `INSERT INTO citizens 
+        (pseudo_id, name_encrypted, phone_encrypted, aadhaar_encrypted, password_hash, email)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING pseudo_id, created_at`,
+      [pseudoId, name, phone, aadhaar, hashedPassword, email]
+    );
+
+    // Send welcome email
+    if (email) {
+      sendWelcomeEmail(email, { pseudoId }).catch(err =>
+        console.error('Email failed silently:', err.message)
+      );
+    }
+
+    res.json({
+      success: true,
+      message: 'Citizen registered successfully',
+      pseudoId: result.rows[0].pseudo_id
+    });
+  } catch (error) {
+    console.error('Register error:', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
+
+// Login
+router.post('/login', async (req, res) => {
+  try {
+    const { phone, password } = req.body;
+
+    const result = await pool.query(
+      'SELECT * FROM citizens WHERE phone_encrypted = $1',
+      [phone]
+    );
+    if (result.rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'Invalid phone or password' });
+    }
+
+    const citizen = result.rows[0];
+    const valid = await bcrypt.compare(password, citizen.password_hash);
+    if (!valid) {
+      return res.status(400).json({ success: false, message: 'Invalid phone or password' });
+    }
+
+    const token = jwt.sign(
+      { id: citizen.id, pseudoId: citizen.pseudo_id, role: 'citizen' },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token: token,
+      pseudoId: citizen.pseudo_id
+    });
+  } catch (error) {
+    console.error('Login error:', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Test email route
+router.get('/test-email', async (req, res) => {
+  const result = await sendWelcomeEmail('your.email@gmail.com', { pseudoId: 'TEST123' });
+  res.json({ success: result });
+});
+
+// ⚠️ TEMP ROUTE — delete after running once
+router.get('/setup-db', async (req, res) => {
+  try {
+    await pool.query(`ALTER TABLE citizens ADD COLUMN IF NOT EXISTS email VARCHAR(255)`);
+    res.json({ success: true, message: 'email column added!' });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+});
+
+module.exports = router;
