@@ -93,13 +93,4 @@ router.get('/test-email', async (req, res) => {
   res.json({ success: result });
 });
 
-router.get('/setup-db', async (req, res) => {
-  try {
-    await pool.query(`ALTER TABLE citizens ADD COLUMN IF NOT EXISTS email VARCHAR(255)`);
-    res.json({ success: true, message: 'email column added!' });
-  } catch (error) {
-    res.json({ success: false, message: error.message });
-  }
-});
-
 module.exports = router;

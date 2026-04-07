@@ -91,7 +91,7 @@ router.post('/login', async (req, res) => {
 
 // Test email route
 router.get('/test-email', async (req, res) => {
-  const result = await sendWelcomeEmail('your.email@gmail.com', { pseudoId: 'TEST123' });
+  const result = await sendWelcomeEmail('monishasundaram17@gmail.com', { pseudoId: 'TEST123' });
   res.json({ success: result });
 });
 
