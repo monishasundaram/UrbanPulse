@@ -81,4 +81,16 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.get('/reset-db', async (req, res) => {
+  try {
+    await pool.query(`DELETE FROM actions`);
+    await pool.query(`DELETE FROM evidence`);
+    await pool.query(`DELETE FROM complaints`);
+    await pool.query(`DELETE FROM citizens`);
+    res.json({ success: true, message: 'All data cleared!' });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+}); 
+
 module.exports = router;
