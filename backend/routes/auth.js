@@ -206,4 +206,21 @@ router.get('/setup-officers', async (req, res) => {
   }
 });
 
+router.get('/create-first-officer', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const officerId = 'OFF001';
+    const hashedPassword = await bcrypt.hash('officer123', 10);
+    await pool.query(
+      `INSERT INTO officers (officer_id, name, username, password_hash, is_approved)
+       VALUES ($1, $2, $3, $4, true)
+       ON CONFLICT (username) DO NOTHING`,
+      [officerId, 'Officer One', 'officer1', hashedPassword]
+    );
+    res.json({ success: true, message: 'Officer created! Username: officer1, Password: officer123' });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;
