@@ -1,5 +1,5 @@
 const API_URL = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-  ? 'https://urbanpulse-backend-5ejl.onrender.com'
+  ? 'https://urbanpulse-tzv8.onrender.com'
   : 'http://localhost:5000';
 
 export async function submitComplaint(data, evidenceFile) {
@@ -107,7 +107,7 @@ export async function getActions(complaintId) {
 
 // AI Proof Gate check
 const AI_URL = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-  ? 'https://urbanpulse-ai-xxx.onrender.com' // Placeholder for cloud run
+  ? 'https://urbanpulse-ai.onrender.com'
   : 'http://localhost:8000';
 
 export async function checkProofGate(data) {
