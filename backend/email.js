@@ -1,20 +1,18 @@
 const { Resend } = require('resend');
 require('dotenv').config();
 
-let resend = null;
-try {
-  if (process.env.RESEND_API_KEY) {
-    resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not set in environment variables');
   }
-} catch (error) {
-  console.log('Resend not configured');
+  return new Resend(process.env.RESEND_API_KEY);
 }
-
 
 // Send welcome email
 async function sendWelcomeEmail(toEmail, citizenData) {
   try {
-    await resend.emails.send({
+    const resend = getResend();
+    const { data, error } = await resend.emails.send({
       from: 'UrbanPulse <onboarding@resend.dev>',
       to: toEmail,
       subject: '🎉 Welcome to UrbanPulse — Account Created!',
@@ -45,10 +43,16 @@ async function sendWelcomeEmail(toEmail, citizenData) {
         </div>
       `,
     });
-    console.log('✅ Welcome email sent via Resend!');
+
+    if (error) {
+      console.error('❌ Resend API error (welcome):', error);
+      return false;
+    }
+
+    console.log('✅ Welcome email sent! ID:', data.id);
     return true;
   } catch (error) {
-    console.error('Resend email failed:', error.message);
+    console.error('❌ sendWelcomeEmail failed:', error.message);
     return false;
   }
 }
@@ -56,7 +60,8 @@ async function sendWelcomeEmail(toEmail, citizenData) {
 // Send complaint confirmation
 async function sendComplaintConfirmation(toEmail, complaintData) {
   try {
-    await resend.emails.send({
+    const resend = getResend();
+    const { data, error } = await resend.emails.send({
       from: 'UrbanPulse <onboarding@resend.dev>',
       to: toEmail,
       subject: `✅ Complaint Filed — ${complaintData.complaint_number}`,
@@ -82,10 +87,16 @@ async function sendComplaintConfirmation(toEmail, complaintData) {
         </div>
       `,
     });
-    console.log('✅ Complaint confirmation email sent!');
+
+    if (error) {
+      console.error('❌ Resend API error (complaint):', error);
+      return false;
+    }
+
+    console.log('✅ Complaint confirmation email sent! ID:', data.id);
     return true;
   } catch (error) {
-    console.error('Resend email failed:', error.message);
+    console.error('❌ sendComplaintConfirmation failed:', error.message);
     return false;
   }
 }
@@ -93,7 +104,8 @@ async function sendComplaintConfirmation(toEmail, complaintData) {
 // Send action notification
 async function sendActionNotification(toEmail, complaintData, actionData) {
   try {
-    await resend.emails.send({
+    const resend = getResend();
+    const { data, error } = await resend.emails.send({
       from: 'UrbanPulse <onboarding@resend.dev>',
       to: toEmail,
       subject: `🔔 Update on Complaint ${complaintData.complaint_number}`,
@@ -117,10 +129,16 @@ async function sendActionNotification(toEmail, complaintData, actionData) {
         </div>
       `,
     });
-    console.log('✅ Action notification sent!');
+
+    if (error) {
+      console.error('❌ Resend API error (action):', error);
+      return false;
+    }
+
+    console.log('✅ Action notification email sent! ID:', data.id);
     return true;
   } catch (error) {
-    console.error('Resend email failed:', error.message);
+    console.error('❌ sendActionNotification failed:', error.message);
     return false;
   }
 }
