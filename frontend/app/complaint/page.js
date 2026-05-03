@@ -1,8 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
-import { useState, useEffect, use } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getComplaint, getActions } from '../../../lib/api';
+import { useSearchParams } from 'next/navigation';
+import { getComplaint, getActions } from '../../lib/api';
 
 const statusColors = {
   'Filed': 'bg-gray-700 text-gray-300',
@@ -11,8 +11,9 @@ const statusColors = {
   'Resolved': 'bg-green-900 text-green-300',
 };
 
-export default function ComplaintDetail({ params }) {
-  const { id } = use(params);
+function ComplaintContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
   const [complaint, setComplaint] = useState(null);
   const [actions, setActions] = useState([]);
   const [evidence, setEvidence] = useState([]);
@@ -217,5 +218,13 @@ export default function ComplaintDetail({ params }) {
 
       </div>
     </main>
+  );
+}
+
+export default function ComplaintDetail() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-950 text-white flex justify-center items-center">Loading...</div>}>
+      <ComplaintContent />
+    </Suspense>
   );
 }

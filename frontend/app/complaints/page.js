@@ -104,7 +104,7 @@ export default function Complaints() {
             </div>
           ) : (
             filtered.map(complaint => (
-              <Link key={complaint.id} href={`/complaint/${complaint.complaint_number}`} className="block bg-gray-900 rounded-xl p-6 border border-gray-800 hover:border-blue-500 transition cursor-pointer">
+              <Link key={complaint.id} href={`/complaint?id=${complaint.complaint_number}`} className="block bg-gray-900 rounded-xl p-6 border border-gray-800 hover:border-blue-500 transition cursor-pointer">
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <span className="text-blue-400 text-sm font-mono">{complaint.complaint_number || complaint.id}</span>
